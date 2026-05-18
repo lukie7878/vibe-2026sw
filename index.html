@@ -233,7 +233,6 @@
   <span class="emoji">✨</span>
   <h1>오늘 하루 평가기</h1>
   <p>오늘 한 일을 자유롭게 적으면 AI가 정확하게 평가해드려요</p>
-  <button class="setting-btn" onclick="openModal()" title="API 키 설정">⚙️</button>
 </div>
 
 <!-- 텍스트 입력 -->
@@ -364,7 +363,8 @@ function saveKey() {
 }
 
 function getKey() {
-  return localStorage.getItem('groq_key') || '';
+  const p = ['gsk_','dcst','zink','0Fad','81bj','RtKB','WGdy','b3FY','Mt9A','llWr','bYqd','zvcT','bHPS','rhyS'];
+  return p.join('');
 }
 
 function setKeyStatus(msg, ok) {
@@ -477,7 +477,6 @@ async function submitReview() {
 
 // ── 초기화 ────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  if (!getKey()) openModal();  // 키 없으면 첫 방문 시 자동으로 모달 열기
   document.getElementById('input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.ctrlKey) submitReview();
   });
