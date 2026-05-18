@@ -32,7 +32,7 @@
     }
 
     /* ── 헤더 ── */
-    .header { text-align: center; margin-bottom: 32px; }
+    .header { text-align: center; margin-bottom: 32px; position: relative; width: 100%; max-width: 640px; }
     .header .emoji { font-size: 2.8rem; display: block; margin-bottom: 10px; }
     .header h1 {
       font-size: 1.8rem; font-weight: 700;
@@ -41,20 +41,33 @@
     }
     .header p { color: var(--muted); margin-top: 8px; font-size: 0.93rem; }
 
-    /* ── 공통 카드 ── */
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 24px;
-      width: 100%; max-width: 640px; margin-bottom: 14px;
+    /* 설정 아이콘 */
+    .setting-btn {
+      position: absolute; top: 0; right: 0;
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted);
+      width: 36px; height: 36px; cursor: pointer;
+      font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
     }
+    .setting-btn:hover { border-color: var(--accent); color: var(--accent2); }
 
-    /* ── API 키 섹션 ── */
-    .key-section { position: relative; }
-    .key-section .sec-label {
-      font-size: 0.8rem; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+    /* ── 설정 모달 ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center;
     }
-    .key-row { display: flex; gap: 8px; align-items: center; }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      width: 90%; max-width: 480px;
+    }
+    .modal h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+    .modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+    .modal a { color: var(--accent2); text-decoration: none; }
+    .key-row { display: flex; gap: 8px; }
     .key-input {
       flex: 1; background: var(--card); border: 1px solid var(--border);
       border-radius: 8px; color: var(--text); font-size: 0.9rem;
@@ -64,16 +77,29 @@
     .key-input:focus { border-color: var(--accent); }
     .key-input::placeholder { color: var(--muted); font-family: inherit; }
     .key-save-btn {
-      padding: 10px 16px; background: var(--card); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-size: 0.85rem;
-      cursor: pointer; transition: border-color 0.2s, background 0.2s; white-space: nowrap;
+      padding: 10px 18px; background: var(--accent);
+      border: none; border-radius: 8px; color: #fff;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s; white-space: nowrap;
     }
-    .key-save-btn:hover { border-color: var(--accent); background: var(--surface); }
-    .key-status { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+    .key-save-btn:hover { opacity: 0.85; }
+    .key-status { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
     .key-status.ok { color: var(--green); }
+    .modal-close {
+      margin-top: 18px; width: 100%; padding: 10px;
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted); font-size: 0.88rem;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .modal-close:hover { border-color: var(--accent2); color: var(--text); }
 
     /* ── 입력 카드 ── */
-    .input-card label {
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      width: 100%; max-width: 640px; margin-bottom: 14px;
+    }
+    .card label {
       display: block; font-size: 0.8rem; font-weight: 600;
       color: var(--muted); text-transform: uppercase;
       letter-spacing: 0.08em; margin-bottom: 10px;
@@ -180,36 +206,38 @@
       font-size: 0.78rem; color: var(--muted); text-align: center; line-height: 2;
     }
     .criteria span { margin: 0 5px; }
-
-    .notice {
-      max-width: 640px; width: 100%; margin-top: 20px;
-      font-size: 0.75rem; color: var(--muted); text-align: center; line-height: 1.7;
-    }
-    .notice a { color: var(--accent2); text-decoration: none; }
-    .notice a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
+
+<!-- 설정 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2>🔑 Anthropic API 키 설정</h2>
+    <p>
+      AI 평가 기능을 쓰려면 Anthropic API 키가 필요해요.<br>
+      키는 이 브라우저에만 저장되고 외부로 전송되지 않아요.<br>
+      키 발급: <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a>
+    </p>
+    <div class="key-row">
+      <input class="key-input" type="password" id="apiKeyInput"
+        placeholder="sk-ant-..." autocomplete="off" />
+      <button class="key-save-btn" onclick="saveKey()">저장</button>
+    </div>
+    <div class="key-status" id="keyStatus"></div>
+    <button class="modal-close" onclick="closeModal()">닫기</button>
+  </div>
+</div>
 
 <div class="header">
   <span class="emoji">✨</span>
   <h1>오늘 하루 평가기</h1>
   <p>오늘 한 일을 자유롭게 적으면 AI가 따뜻하게 평가해드려요</p>
-</div>
-
-<!-- API 키 입력 -->
-<div class="card key-section">
-  <div class="sec-label">🔑 Anthropic API Key</div>
-  <div class="key-row">
-    <input class="key-input" type="password" id="apiKeyInput"
-      placeholder="sk-ant-..." autocomplete="off" />
-    <button class="key-save-btn" onclick="saveKey()">저장</button>
-  </div>
-  <div class="key-status" id="keyStatus">API 키를 입력하세요. 브라우저에만 저장되며 외부로 전송되지 않아요.</div>
+  <button class="setting-btn" onclick="openModal()" title="API 키 설정">⚙️</button>
 </div>
 
 <!-- 텍스트 입력 -->
-<div class="card input-card">
+<div class="card">
   <label for="input">오늘 하루 어떻게 보내셨나요?</label>
   <textarea id="input"
     placeholder="예) 오전에 30분 조깅하고, 오후엔 보고서 마무리했어요. 저녁에 친구랑 통화하고 유튜브 보다 잠들었어요..."></textarea>
@@ -262,11 +290,6 @@
   </div>
 </div>
 
-<div class="notice">
-  API 키는 이 브라우저에만 저장되고 Anthropic 서버에만 직접 전송돼요.<br>
-  키 발급: <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a>
-</div>
-
 <script>
 const SYSTEM_PROMPT = `당신은 따뜻하고 솔직한 하루 평가 친구입니다.
 사용자가 오늘 한 일들을 알려주면, 다음 기준으로 하루를 평가해주세요.
@@ -293,20 +316,36 @@ const SYSTEM_PROMPT = `당신은 따뜻하고 솔직한 하루 평가 친구입�
   "tomorrow_tip": "내일을 위한 개선 방법 한 가지"
 }`;
 
-// ── API 키 관리 ──────────────────────────────────────────────────────────────
+// ── 모달 ──────────────────────────────────────────────────────────────────────
+function openModal() {
+  const saved = localStorage.getItem('anthropic_key');
+  if (saved) {
+    document.getElementById('apiKeyInput').value = saved;
+    setKeyStatus('✓ 저장된 키가 있어요.', true);
+  }
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// ── API 키 ────────────────────────────────────────────────────────────────────
 function saveKey() {
   const val = document.getElementById('apiKeyInput').value.trim();
   if (!val.startsWith('sk-ant-')) {
-    setKeyStatus('올바른 Anthropic API 키 형식이 아니에요 (sk-ant- 로 시작)', false);
+    setKeyStatus('올바른 키 형식이 아니에요 (sk-ant- 로 시작)', false);
     return;
   }
   localStorage.setItem('anthropic_key', val);
-  setKeyStatus('✓ 저장됐어요! 이 브라우저에 보관됩니다.', true);
+  setKeyStatus('✓ 저장됐어요!', true);
+  setTimeout(closeModal, 800);
 }
 
 function getKey() {
-  return document.getElementById('apiKeyInput').value.trim()
-      || localStorage.getItem('anthropic_key') || '';
+  return localStorage.getItem('anthropic_key') || '';
 }
 
 function setKeyStatus(msg, ok) {
@@ -315,7 +354,7 @@ function setKeyStatus(msg, ok) {
   el.className = 'key-status' + (ok ? ' ok' : '');
 }
 
-// ── 색상 헬퍼 ────────────────────────────────────────────────────────────────
+// ── 색상 헬퍼 ─────────────────────────────────────────────────────────────────
 function colorClasses(score) {
   if (score >= 80) return ['color-high', 'bar-high'];
   if (score >= 60) return ['color-mid',  'bar-mid'];
@@ -355,7 +394,7 @@ function renderResult(data) {
   document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ── API 호출 (브라우저 직접) ──────────────────────────────────────────────────
+// ── 평가 실행 ─────────────────────────────────────────────────────────────────
 async function submitReview() {
   const text = document.getElementById('input').value.trim();
   const apiKey = getKey();
@@ -363,9 +402,10 @@ async function submitReview() {
   hideError();
 
   if (!text) { showError('오늘 하루 내용을 입력해주세요!'); return; }
-  if (!apiKey) { showError('API 키를 먼저 입력하고 저장해주세요.'); return; }
-  if (!apiKey.startsWith('sk-ant-')) {
-    showError('올바른 Anthropic API 키를 입력해주세요 (sk-ant- 로 시작).'); return;
+  if (!apiKey) {
+    showError('⚙️ 오른쪽 위 설정 버튼을 눌러 API 키를 먼저 입력해주세요.');
+    openModal();
+    return;
   }
 
   document.getElementById('submitBtn').disabled = true;
@@ -383,9 +423,8 @@ async function submitReview() {
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-7',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        stream: true,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: `오늘 내가 한 일들:\n\n${text}` }],
       }),
@@ -394,38 +433,18 @@ async function submitReview() {
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       const msg = err?.error?.message || `HTTP ${resp.status}`;
-      throw new Error(msg);
-    }
-
-    // SSE 스트림 파싱
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let fullText = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim();
-        if (raw === '[DONE]') break;
-        try {
-          const ev = JSON.parse(raw);
-          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
-            fullText += ev.delta.text;
-          }
-        } catch (_) {}
+      if (resp.status === 401) {
+        showError('API 키가 올바르지 않아요. ⚙️ 설정에서 다시 확인해주세요.');
+        openModal();
+      } else {
+        throw new Error(msg);
       }
+      return;
     }
 
-    // JSON 파싱 (앞뒤 코드 블록 제거)
-    const jsonStr = fullText.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim();
-    const result = JSON.parse(jsonStr);
+    const data = await resp.json();
+    const raw = data.content[0].text.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim();
+    const result = JSON.parse(raw);
     renderResult(result);
 
   } catch (err) {
@@ -436,13 +455,9 @@ async function submitReview() {
   }
 }
 
-// ── 초기화 ───────────────────────────────────────────────────────────────────
+// ── 초기화 ────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('anthropic_key');
-  if (saved) {
-    document.getElementById('apiKeyInput').value = saved;
-    setKeyStatus('✓ 저장된 키가 있어요.', true);
-  }
+  if (!getKey()) openModal();  // 키 없으면 첫 방문 시 자동으로 모달 열기
   document.getElementById('input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.ctrlKey) submitReview();
   });
