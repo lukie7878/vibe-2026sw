@@ -352,8 +352,8 @@ function closeModalOutside(e) {
 // ── API 키 ────────────────────────────────────────────────────────────────────
 function saveKey() {
   const val = document.getElementById('apiKeyInput').value.trim();
-  if (!val.startsWith('AIza')) {
-    setKeyStatus('올바른 키 형식이 아니에요 (AIza 로 시작)', false);
+  if (val.length < 10) {
+    setKeyStatus('키가 너무 짧아요. 다시 확인해주세요.', false);
     return;
   }
   localStorage.setItem('gemini_key', val);
